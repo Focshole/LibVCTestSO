@@ -13,10 +13,8 @@ void printDate() {
 #include <string>
 extern "C" {
 
-const char * rust_function(const char *s){
-  std::cout<<"Replaced!"<<std::endl;
-  const char * ret= new char[10];
-  ret="Replaced!";
-  return ret;
+int rust_function(const std::string & s1, std::string &s2) {
+  s2="'This should have been the sha but it had been replaced'";
+  return 2;
 }
 } // extern "C"

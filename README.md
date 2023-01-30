@@ -1,18 +1,17 @@
-# TestIRL
+# LibVCTestSO
 
-Testing libvc to inject code fixes onto existing binaries
+Testing libVersioningCompiler to load external shared libraries
 
 ## Howto
 
 First, do once:
 
 ```bash
-./install_libVC.sh && ./build_test_binary.sh
+./install_libVC.sh
 ```
-Those commands will build libVC and the rust example library. They will also generate ./externalLibrary/HowToImport.h which will suggest which signature you should use to integrate the shared library.
 
-Then to compile & run
+To install libVersioningCompiler in ./libVC. Then to compile & run, just do:
 
 ```bash
-./build_test_binary_fast.sh && ./deploy.sh && ./build/run_loadSo_test
+./build_test_binary.sh && ./deploy.sh && ./build/run_loadSo_test
 ```

@@ -25,9 +25,9 @@
 #define ORIGINAL_SHARED_LIB_PATH                                               \
   "./externalLibrary/testlib/target/release/libtestlib.so"
 #endif
-// Function signatures that we will be using. Prepared from externalLibrary/HowToImport.h
+// Function signatures that we will be using
 typedef void (*void_signature_t)();
-typedef const char *(*string_signature_t)(const char *);
+typedef const int (*string_signature_t)(const std::string &, std::string &);
 
 void run_test(const std::string original_binary);
 
@@ -68,8 +68,8 @@ int main(int argc, char const *argv[]) {
 void run_test(const std::string rust_shared_library) {
   // --------- Load a .so built from rust
   std::vector<std::string> symbols;
-  symbols.push_back("hello_world");
-  symbols.push_back("rust_function");
+  symbols.push_back("cxxbridge1$hello_world");
+  symbols.push_back("cxxbridge1$rust_function");
 
   // Create a version from an existing .so. The compiler in this case is
   // irrelevant because it won't actually build a version or be versioned
@@ -89,6 +89,7 @@ void run_test(const std::string rust_shared_library) {
     }
     exit(-1);
   }
+  // Check that all symbols have been correctly loaded
   if (!versionFromSo->hasLoadedSymbol()) {
     std::cerr << "version from .so hasn't loaded symbol" << std::endl;
     exit(-1);
@@ -97,17 +98,15 @@ void run_test(const std::string rust_shared_library) {
   void_signature_t hello_wrld = (void_signature_t)versionFromSo->getSymbol(0);
   string_signature_t sha_rust = (string_signature_t)versionFromSo->getSymbol(1);
   // Run the rust function
-
   if (!hello_wrld) {
-
     std::cerr << "Rust version's get symbol failed" << std::endl;
     exit(-1);
   }
   hello_wrld();
-  auto hello_wrld_sha = sha_rust("hello world");
+  std::string hello_wrld_sha = "";
+  auto out = sha_rust("hello world", hello_wrld_sha);
   std::cout << "Sha of \"hello world\" from rust: " << hello_wrld_sha
-            << std::endl;
-  delete (hello_wrld_sha);
+            << " returned " << out << std::endl;
 
   // --------- Build and import a cpp function
 
@@ -126,8 +125,9 @@ void run_test(const std::string rust_shared_library) {
   builder._functionName.push_back("rust_function"); // Symbol 1
   builder._fileName_src.push_back(patch_source); // The file which contains the
                                                  // functions
-  builder._compiler = clang;  // The compiler to be used
-  builder._autoremoveFilesEnable = true; // Remove the generated intermediate files
+  builder._compiler = clang;                     // The compiler to be used
+  builder._autoremoveFilesEnable =
+      true; // Remove the generated intermediate files
   builder._genIROptionList = {
       vc::Option("Set code as position independent", "-fPIC")};
   vc::version_ptr_t v2 = builder.build(); // Prepare the version builder
@@ -163,9 +163,23 @@ void run_test(const std::string rust_shared_library) {
   }
   funv2();
   string_signature_t fake_sha_rust = (string_signature_t)v2->getSymbol(1);
+  std::string fake_sha = "";
+  auto out2 = fake_sha_rust("hello world", fake_sha);
   std::cout << "Overwritten version of sha of \"hello world\" from rust: "
-            << fake_sha_rust("hello world") << std::endl;
+            << fake_sha << " returned " << out2 << std::endl;
   // close
   versionFromSo->fold();
   v2->fold();
+  // Try again to load the shared library
+  versionFromSo->reload();
+  sha_rust = (string_signature_t)versionFromSo->getSymbol(1);
+  hello_wrld_sha = "";
+  out = sha_rust("hello world2", hello_wrld_sha);
+  std::cout << "Sha of \"hello world2\" from rust: " << hello_wrld_sha
+            << " returned " << out << std::endl;
+  hello_wrld_sha = "";
+  out = sha_rust("", hello_wrld_sha);
+  std::cout << "Sha of an empty string from rust: " << hello_wrld_sha
+            << " returned " << out << std::endl;
+  versionFromSo->fold();
 }

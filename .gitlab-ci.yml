@@ -8,7 +8,7 @@ stages:
   - DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata apt-transport-https ca-certificates gnupg software-properties-common wget --yes
   - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
   - apt-add-repository 'deb https://apt.kitware.com/ubuntu/ jammy main'
-  - apt-get install --quiet --yes build-essential cmake libz-dev uuid-dev git cargo cbindgen libboost-all-dev
+  - apt-get install --quiet --yes build-essential cmake libz-dev uuid-dev git cargo libboost-all-dev
   - cmake --version
 
 # Test with ubuntu jammy with its default llvm & clang - clang compiler as default
@@ -21,6 +21,12 @@ build-jammy-clang:
   before_script:
     - *setup_script_jammy
     - apt-get install clang-$CLANG_VN clang-tools-$CLANG_VN lld-$CLANG_VN llvm-$CLANG_VN-dev libclang-$CLANG_VN-dev --yes
+    - update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-$CLANG_VN 100 && update-alternatives --install /usr/bin/opt opt /usr/bin/opt-$CLANG_VN && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-$CLANG_VN 100
     - ./install_libVC.sh && ./build_test_binary.sh
   script:
-    - ./build_test_binary_fast.sh && ./deploy.sh && ./build/run_loadSo_test
+    - ./build_test_binary.sh && ./deploy.sh && ./build/run_loadSo_test
+  artifacts:
+    when: on_failure
+    paths:
+      - .
+    expire_in: 1 week
