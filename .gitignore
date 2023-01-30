@@ -1,0 +1,11 @@
+build/
+cmake/FindLibVersioningCompiler.cmake
+libVC/*.yml
+.vscode/
+externalLibrary/testlib/target
+externalLibrary/testlib/Cargo.lock
+externalLibrary/HowToImport.h
+clang++.log
+lib*.so
+IR_*.bc
+opt_IR_*.bc

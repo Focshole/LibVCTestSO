@@ -1,0 +1,26 @@
+# Gitlab CI/CD file
+
+stages:
+  - test
+# Install required packages for all builds & tests
+.setup_script_jammy: &setup_script_jammy
+  - apt-get --quiet update --yes
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata apt-transport-https ca-certificates gnupg software-properties-common wget --yes
+  - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+  - apt-add-repository 'deb https://apt.kitware.com/ubuntu/ jammy main'
+  - apt-get install --quiet --yes build-essential cmake libz-dev uuid-dev git cargo cbindgen libboost-all-dev
+  - cmake --version
+
+# Test with ubuntu jammy with its default llvm & clang - clang compiler as default
+build-jammy-clang:
+  stage: test
+  image: ubuntu:jammy
+  variables:
+    CLANG_VN: "14"
+    CXX: "clang++-14"
+  before_script:
+    - *setup_script_jammy
+    - apt-get install clang-$CLANG_VN clang-tools-$CLANG_VN lld-$CLANG_VN llvm-$CLANG_VN-dev libclang-$CLANG_VN-dev --yes
+    - ./install_libVC.sh && ./build_test_binary.sh
+  script:
+    - ./build_test_binary_fast.sh && ./deploy.sh && ./build/run_loadSo_test
